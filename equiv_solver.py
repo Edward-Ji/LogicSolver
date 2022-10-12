@@ -332,17 +332,20 @@ def standardize(formula):
             return (BOT,)
         elif var.matches(formula[0]):
             return (formula[0],)
+        else:
+            return standardize(formula[0])
     elif len(formula) == 2:
         return (LNOT, standardize(formula[1]))
     else:
-        if conj.matches(formula[1]):
-            return (standardize(formula[0]), LAND, standardize(formula[2]))
-        elif disj.matches(formula[1]):
-            return (standardize(formula[0]), LOR, standardize(formula[2]))
-        elif imply.matches(formula[1]):
-            return (standardize(formula[0]), IMPLIES, standardize(formula[2]))
-        elif lrarr.matches(formula[1]):
-            return (standardize(formula[0]), LRARR, standardize(formula[2]))
+        if conj.matches(formula[-2]):
+            return (standardize(formula[:-2]), LAND, standardize(formula[-1]))
+        elif disj.matches(formula[-2]):
+            return (standardize(formula[:-2]), LOR, standardize(formula[-1]))
+        elif imply.matches(formula[-2]):
+            return (
+                standardize(formula[:-2]), IMPLIES, standardize(formula[-1]))
+        elif lrarr.matches(formula[-2]):
+            return (standardize(formula[:-2]), LRARR, standardize(formula[-1]))
 
 
 def stringify(formula):
