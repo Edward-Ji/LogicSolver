@@ -372,7 +372,7 @@ def stringify(formula):
 
 
 def display_steps(steps):
-    index_width = math.ceil(math.log(len(steps) - 1))
+    index_width = math.ceil(math.log(len(steps)))
     table = []
     formula_width = 0
     for formula, law in steps:
