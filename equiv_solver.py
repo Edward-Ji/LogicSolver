@@ -2,8 +2,10 @@
 A very finicky logic equivalence solver.
 """
 
+import math
 import os
 import sys
+from collections import namedtuple
 from itertools import product
 
 import pyparsing
@@ -225,81 +227,99 @@ def bi_conditional_law(formula):
         yield ((left, IMPLIES, right), LAND, (right, IMPLIES, left))
 
 
-laws = [
-    idempotent_laws,
-    commutative_laws,
-    associative_laws,
-    absorption_laws,
-    distributive_laws,
-    de_morgans_laws,
-    double_negation_law,
-    validity_law,
-    unsatisfiability_law,
-    constant_laws,
-    negating_constant_laws,
-    conditional_law,
-    bi_conditional_law
-]
+laws = {
+    "Idempotent Laws": idempotent_laws,
+    "Commutative Laws": commutative_laws,
+    "Associative Laws": associative_laws,
+    "Absorption Laws": absorption_laws,
+    "Distributive Laws": distributive_laws,
+    "de Morgan's Laws": de_morgans_laws,
+    "Double Negation Law": double_negation_law,
+    "Validity Law": validity_law,
+    "Unsatisfiability Law": unsatisfiability_law,
+    "Constant Laws": constant_laws,
+    "Negating Constant Laws": negating_constant_laws,
+    "Conditional Law": conditional_law,
+    "Bi-conditional Law": bi_conditional_law
+}
+
+
+Step = namedtuple("Step", ["formula", "law"])
 
 
 def apply_laws(formula):
     if len(formula) == 2:
         symbol, right = formula
-        for right_applied in apply_laws(right):
-            yield (symbol, right_applied)
+        for right_applied, applied_law in apply_laws(right):
+            yield Step((symbol, right_applied), applied_law)
     elif len(formula) == 3:
         left, symbol, right = formula
-        for left_applied, right_applied in product(
-                apply_laws(left), apply_laws(right)):
-            yield (left_applied, symbol, right_applied)
-    for law in laws:
+        for left_applied, applied_law in apply_laws(left):
+            yield Step((left_applied, symbol, right), applied_law)
+        for right_applied, applied_law in apply_laws(right):
+            yield Step((left, symbol, right_applied), applied_law)
+    for law_name, law in laws.items():
         for applied in law(formula):
-            yield applied
-    yield formula
+            yield Step(applied, law_name)
 
 
 def nest_level(formula):
     if len(formula) == 1:
-        return 0
+        return 1
     elif len(formula) == 2:
         return nest_level(formula[1]) + 1
     else:
-        return max(nest_level(formula[0]), nest_level(formula[2])) + 1
+        return nest_level(formula[0]) + nest_level(formula[2]) + 1
 
 
 def apply_laws_to_leaves(paths, nest_limit):
     new_paths = {}
     for path in paths.values():
-        formula = path[-1]
-        for applied in apply_laws(formula):
-            new_path = path + [applied]
-            dynam_limit = (nest_limit + nest_level(formula)) / 2 + 0.5
-            if applied not in paths and nest_level(applied) <= dynam_limit:
-                new_paths[applied] = path + [applied]
+        formula = path[-1].formula
+        for new_step in apply_laws(formula):
+            new_path = path + [new_step]
+            applied = new_step.formula
+            if applied not in paths and nest_level(applied) <= nest_limit:
+                new_paths[applied] = new_path
 
     return new_paths
 
 
 def prove_equiv(lhs, rhs, nest_limit=0):
-    left_nest_limit = nest_limit or nest_level(lhs) + 1
-    right_nest_limit = nest_limit or nest_level(rhs) + 1
-    left_paths = {lhs: [lhs]}
-    right_paths = {rhs: [rhs]}
+    left_nest_limit = nest_limit or nest_level(lhs) + 5
+    right_nest_limit = nest_limit or nest_level(rhs) + 5
+    left_paths = {lhs: [Step(lhs, "Assumption Introduction")]}
+    right_paths = {rhs: [Step(rhs, "")]}
+    progress = True
     count = 1
     while count:
         print(f"Step {count}...")
         if count % 2:
             new_paths = apply_laws_to_leaves(left_paths, left_nest_limit)
-            left_paths.update(new_paths)
         else:
             new_paths = apply_laws_to_leaves(right_paths, right_nest_limit)
+        if not new_paths:
+            if not progress:
+                return
+            progress = False
+        else:
+            print(f"\tFound {len(new_paths)} new paths.")
+            progress = True
+        if count % 2:
+            left_paths.update(new_paths)
+        else:
             right_paths.update(new_paths)
         met = left_paths.keys() & right_paths.keys()
         if met:
             for met_at in met:
                 left_path = left_paths[met_at]
                 right_path = right_paths[met_at]
-                yield left_path + right_path[-2::-1]
+                right_formulas = [step.formula for step in right_path]
+                right_laws = [step.law for step in right_path]
+                fixed_path = [Step(formula, law) for formula, law in
+                    zip(right_formulas[-2::-1], right_laws[:0:-1])
+                ]
+                yield left_path + fixed_path
             return
         count += 1
 
@@ -348,6 +368,19 @@ def stringify(formula):
             return f"({left_str}{LRARR}{right_str})"
 
 
+def display_steps(steps):
+    index_width = math.ceil(math.log(len(steps) - 1))
+    table = []
+    formula_width = 0
+    for formula, law in steps:
+        formula_str = stringify(formula)
+        if len(formula_str) > formula_width:
+            formula_width = len(formula_str)
+        table.append((formula_str, law))
+    for i, (formula_str, law) in enumerate(table):
+        print(f"{i:{index_width}d} | {formula_str:^{formula_width}s} | {law}")
+
+
 def main():
     print("Enter an equivalence: ")
     equiv_str = input()
@@ -358,14 +391,16 @@ def main():
     lhs = standardize(equiv_parsed[0])
     rhs = standardize(equiv_parsed[2])
 
-    print(stringify(lhs))
-    print(stringify(rhs))
+    print("Left hand side:", stringify(lhs))
+    print("Right hand side:", stringify(rhs))
 
-    proof = prove_equiv(lhs, rhs)
+    proven = False
     for m, proof in enumerate(prove_equiv(lhs, rhs)):
         print(f"Proof {m}")
-        for n, step in enumerate(proof):
-            print(f"\t{n}", stringify(step))
+        display_steps(proof)
+        proven = True
+    if not proven:
+        print("Failed to construct a proof.")
 
 
 if __name__ == "__main__":
