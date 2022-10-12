@@ -58,11 +58,7 @@ equiv = expr + one_of("≡ ==") + expr
 
 
 def parse_equiv(equiv_str):
-    try:
-        return equiv.parse_string(equiv_str, parse_all=True).as_list()
-    except ParseException as err:
-        print(f"{'^':>{err.col}s}")
-        print(err)
+    return equiv.parse_string(equiv_str, parse_all=True).as_list()
 
 
 def is_verum(formula):
@@ -387,8 +383,13 @@ def display_steps(steps):
 def main():
     print("Enter an equivalence: ")
     equiv_str = input()
-    equiv_parsed = parse_equiv(equiv_str)
-    if equiv_parsed is None:
+    try:
+        equiv_parsed = parse_equiv(equiv_str)
+    except ParseException as err:
+        print("Unable to parse:")
+        print(equiv_str)
+        print(f"{'^':>{err.col}s}")
+        print(err)
         return 1
 
     lhs = standardize(equiv_parsed[0])
