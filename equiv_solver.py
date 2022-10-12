@@ -307,16 +307,15 @@ def prove_equiv(lhs, rhs, nest_limit=0):
             right_paths.update(new_paths)
         met = left_paths.keys() & right_paths.keys()
         if met:
-            for met_at in met:
-                left_path = left_paths[met_at]
-                right_path = right_paths[met_at]
-                right_formulas = [step.formula for step in right_path]
-                right_laws = [step.law for step in right_path]
-                fixed_path = [Step(formula, law) for formula, law in
-                    zip(right_formulas[-2::-1], right_laws[:0:-1])
-                ]
-                yield left_path + fixed_path
-            return
+            met_at, *_ = met
+            left_path = left_paths[met_at]
+            right_path = right_paths[met_at]
+            right_formulas = [step.formula for step in right_path]
+            right_laws = [step.law for step in right_path]
+            fixed_path = [Step(formula, law) for formula, law in
+                zip(right_formulas[-2::-1], right_laws[:0:-1])
+            ]
+            return left_path + fixed_path
         count += 1
 
 
@@ -398,12 +397,11 @@ def main():
     print("Left hand side:", stringify(lhs))
     print("Right hand side:", stringify(rhs))
 
-    proven = False
-    for m, proof in enumerate(prove_equiv(lhs, rhs)):
-        print(f"Proof {m}")
+    proof = prove_equiv(lhs, rhs)
+    if proof is not None:
+        print("Proof:")
         display_steps(proof)
-        proven = True
-    if not proven:
+    else:
         print("Failed to construct a proof.")
 
 
