@@ -256,7 +256,7 @@ def display_steps(steps):
         index_str = str(index)
         formula_str = stringify(formula)
         table.append((index_str, formula_str, law))
-    print_table(table, aligns=">^<")
+    print_table(table, aligns=">^<", header=["Step", "Formula", "Law"])
 
 
 def main():
