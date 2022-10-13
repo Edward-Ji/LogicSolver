@@ -8,89 +8,14 @@ import sys
 from collections import namedtuple
 from itertools import product
 
-import pyparsing
-from pyparsing import (
-    Char, Keyword, Literal, OpAssoc,
-    alphas, infix_notation, one_of
-)
 from pyparsing.exceptions import ParseException
 
-
-pyparsing.ParserElement.enablePackrat()
-
-TOP = "⊤"
-BOT = "⊥"
-LNOT = "¬"
-LAND = "∧"
-LOR = "∨"
-IMPLIES = "→"
-LRARR = "↔"
-
-not_ = Keyword("not", caseless=True)
-and_ = Keyword("and", caseless=True)
-or_ = Keyword("or", caseless=True)
-implies_ = Keyword("implies", caseless=True)
-
-verum = one_of(TOP + " 1")
-falsem = one_of(BOT + " 0")
-const = verum | falsem
-var = Char(alphas)
-atom = const | var
-
-neg = one_of(LNOT + " ! ~") | not_
-conj = one_of(LAND + " &") | and_
-disj = one_of(LOR + " | +") | or_
-imply = one_of(IMPLIES + " ->") | implies_
-lrarr = one_of(LRARR + " <->")
-
-expr = infix_notation(
-    atom,
-    [
-        (neg, 1, OpAssoc.RIGHT),
-        (conj, 2, OpAssoc.LEFT),
-        (disj, 2, OpAssoc.LEFT),
-        (imply, 2, OpAssoc.RIGHT),
-        (lrarr, 2, OpAssoc.RIGHT)
-    ]
+from logic_parser import (
+    TOP, BOT, LNOT, LAND, LOR, IMPLIES, LRARR,
+    is_verum, is_falsem, is_neg, is_conj, is_disj, is_imply, is_lrarr,
+    parse_equiv, standardize, stringify
 )
-equiv = expr + one_of("≡ ==") + expr
-
-
-
-def parse_equiv(equiv_str):
-    return equiv.parse_string(equiv_str, parse_all=True).as_list()
-
-
-def is_verum(formula):
-    return len(formula) == 1 and formula[0] == TOP
-
-
-def is_falsem(formula):
-    return len(formula) == 1 and formula[0] == BOT
-
-
-def is_var(formula):
-    return len(formula) == 1 and formula[0] not in (TOP, BOT)
-
-
-def is_neg(formula):
-    return len(formula) == 2
-
-
-def is_conj(formula):
-    return len(formula) == 3 and formula[1] == LAND
-
-
-def is_disj(formula):
-    return len(formula) == 3 and formula[1] == LOR
-
-
-def is_imply(formula):
-    return len(formula) == 3 and formula[1] == IMPLIES
-
-
-def is_lrarr(formula):
-    return len(formula) == 3 and formula[1] == LRARR
+from table_format import print_table
 
 
 def idempotent_laws(formula):
@@ -220,7 +145,7 @@ def conditional_law(formula):
 def bi_conditional_law(formula):
     if is_lrarr(formula):
         left, _, right = formula
-        yield ((left, IMPLIES, right), LAND, (right, IMPLIES, left))
+        yield ((left, IMPLIES, right), LRARR, (right, IMPLIES, left))
 
 
 laws = {
@@ -319,64 +244,13 @@ def prove_equiv(lhs, rhs, nest_limit=0):
         count += 1
 
 
-def standardize(formula):
-    if len(formula) == 1:
-        if verum.matches(formula[0]):
-            return (TOP,)
-        elif falsem.matches(formula[0]):
-            return (BOT,)
-        elif var.matches(formula[0]):
-            return (formula[0],)
-        else:
-            return standardize(formula[0])
-    elif len(formula) == 2:
-        return (LNOT, standardize(formula[1]))
-    else:
-        if conj.matches(formula[-2]):
-            return (standardize(formula[:-2]), LAND, standardize(formula[-1]))
-        elif disj.matches(formula[-2]):
-            return (standardize(formula[:-2]), LOR, standardize(formula[-1]))
-        elif imply.matches(formula[-2]):
-            return (
-                standardize(formula[:-2]), IMPLIES, standardize(formula[-1]))
-        elif lrarr.matches(formula[-2]):
-            return (standardize(formula[:-2]), LRARR, standardize(formula[-1]))
-
-
-def stringify(formula):
-    if is_verum(formula):
-        return TOP
-    elif is_falsem(formula):
-        return BOT
-    elif is_var(formula):
-        return formula[0]
-    elif is_neg(formula):
-        right_str = stringify(formula[1])
-        return f"{LNOT}{right_str}"
-    elif len(formula) == 3:
-        left_str = stringify(formula[0])
-        right_str = stringify(formula[2])
-        if is_conj(formula):
-            return f"({left_str}{LAND}{right_str})"
-        elif is_disj(formula):
-            return f"({left_str}{LOR}{right_str})"
-        elif is_imply(formula):
-            return f"({left_str}{IMPLIES}{right_str})"
-        elif is_lrarr(formula):
-            return f"({left_str}{LRARR}{right_str})"
-
-
 def display_steps(steps):
-    index_width = math.ceil(math.log(len(steps)))
     table = []
-    formula_width = 0
-    for formula, law in steps:
+    for index, (formula, law) in enumerate(steps):
+        index_str = str(index)
         formula_str = stringify(formula)
-        if len(formula_str) > formula_width:
-            formula_width = len(formula_str)
-        table.append((formula_str, law))
-    for i, (formula_str, law) in enumerate(table):
-        print(f"{i:{index_width}d} | {formula_str:^{formula_width}s} | {law}")
+        table.append((index_str, formula_str, law))
+    print_table(table, aligns=">^<")
 
 
 def main():
