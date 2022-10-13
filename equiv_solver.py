@@ -193,9 +193,11 @@ def nest_level(formula):
         return nest_level(formula[0]) + nest_level(formula[2]) + 1
 
 
-def apply_laws_to_leaves(paths, nest_limit):
+def apply_laws_to_leaves(paths, nest_limit, path_len):
     new_paths = {}
     for path in paths.values():
+        if len(path) < path_len:
+            continue
         formula = path[-1].formula
         for new_step in apply_laws(formula):
             new_path = path + [new_step]
@@ -216,9 +218,13 @@ def prove_equiv(lhs, rhs, nest_limit=0):
     while count:
         print(f"Step {count}...")
         if count % 2:
-            new_paths = apply_laws_to_leaves(left_paths, left_nest_limit)
+            new_paths = apply_laws_to_leaves(left_paths,
+                                             left_nest_limit,
+                                             count // 2)
         else:
-            new_paths = apply_laws_to_leaves(right_paths, right_nest_limit)
+            new_paths = apply_laws_to_leaves(right_paths,
+                                             right_nest_limit,
+                                             count // 2)
         if not new_paths:
             if not progress:
                 return
