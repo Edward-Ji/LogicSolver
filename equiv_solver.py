@@ -13,7 +13,7 @@ from pyparsing.exceptions import ParseException
 from logic_parser import (
     TOP, BOT, LNOT, LAND, LOR, IMPLIES, LRARR,
     is_verum, is_falsem, is_neg, is_conj, is_disj, is_imply, is_lrarr,
-    parse_equiv, standardize, stringify
+    parse_equiv, standardize, stringify, get_vars, evaluate
 )
 from table_format import print_table
 
@@ -259,6 +259,26 @@ def display_steps(steps):
     print_table(table, aligns=">^<", header=["Step", "Formula", "Law"])
 
 
+def verify_equiv(lhs, rhs, vars):
+    FT = "FT"
+    equality = True
+    table = []
+    for values in product((True, False), repeat=len(vars)):
+        assignment = dict(zip(vars, values))
+        lhs_value = evaluate(lhs, assignment)
+        rhs_value = evaluate(rhs, assignment)
+        if lhs_value != rhs_value:
+            print(lhs_value, rhs_value, assignment)
+            equality = False
+        table.append([*map(lambda b: FT[b], [*values, lhs_value, rhs_value])])
+
+    print_table(table,
+                aligns="^" * (len(vars) + 2),
+                header=[*vars, stringify(lhs), stringify(rhs)])
+
+    return equality
+
+
 def main():
     print("Enter an equivalence: ")
     equiv_str = input()
@@ -273,9 +293,18 @@ def main():
 
     lhs = standardize(equiv_parsed[0])
     rhs = standardize(equiv_parsed[2])
+    vars = sorted({*get_vars(lhs), *get_vars(rhs)})
 
     print("Left hand side:", stringify(lhs))
     print("Right hand side:", stringify(rhs))
+    if vars:
+        print("Variables:", ", ".join(vars))
+    else:
+        print("No variables")
+
+    if not verify_equiv(lhs, rhs, vars):
+        print("They are not equivalent.")
+        return 2
 
     proof = prove_equiv(lhs, rhs)
     if proof is not None:
@@ -283,6 +312,9 @@ def main():
         display_steps(proof)
     else:
         print("Failed to construct a proof.")
+        return 3
+
+    return 0
 
 
 if __name__ == "__main__":

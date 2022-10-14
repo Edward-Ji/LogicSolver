@@ -105,6 +105,38 @@ def is_lrarr(formula):
     return len(formula) == 3 and formula[1] == LRARR
 
 
+def get_vars(formula):
+    if len(formula) == 1:
+        if is_var(formula):
+            yield formula[0]
+    elif len(formula) == 2:
+        yield from get_vars(formula[1])
+    elif len(formula) == 3:
+        yield from get_vars(formula[0])
+        yield from get_vars(formula[2])
+
+
+def evaluate(formula, assignment):
+    if is_verum(formula):
+        return True
+    elif is_falsem(formula):
+        return False
+    elif is_var(formula):
+        return assignment[formula[0]]
+    elif is_neg(formula):
+        return not evaluate(formula[1], assignment)
+    elif len(formula) == 3:
+        left, _, right = formula
+        if is_conj(formula):
+            return evaluate(left, assignment) and evaluate(right, assignment)
+        elif is_disj(formula):
+            return evaluate(left, assignment) or evaluate(right, assignment)
+        elif is_imply(formula):
+            return not evaluate(left, assignment) or evaluate(right, assignment)
+        elif is_lrarr(formula):
+            return evaluate(left, assignment) == evaluate(right, assignment)
+
+
 def stringify(formula):
     if is_verum(formula):
         return TOP
