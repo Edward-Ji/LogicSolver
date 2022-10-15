@@ -31,6 +31,7 @@ conj = one_of(LAND + " &") | and_
 disj = one_of(LOR + " | +") | or_
 imply = one_of(IMPLIES + " ->") | implies_
 lrarr = one_of(LRARR + " <->")
+condi = imply | lrarr
 
 expr = infix_notation(
     atom,
@@ -38,8 +39,7 @@ expr = infix_notation(
         (neg, 1, OpAssoc.RIGHT),
         (conj, 2, OpAssoc.LEFT),
         (disj, 2, OpAssoc.LEFT),
-        (imply, 2, OpAssoc.RIGHT),
-        (lrarr, 2, OpAssoc.RIGHT)
+        (condi, 2, OpAssoc.RIGHT)
     ]
 )
 equiv = expr + one_of("≡ ==") + expr
