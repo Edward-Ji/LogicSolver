@@ -268,7 +268,6 @@ def verify_equiv(lhs, rhs, vars):
         lhs_value = evaluate(lhs, assignment)
         rhs_value = evaluate(rhs, assignment)
         if lhs_value != rhs_value:
-            print(lhs_value, rhs_value, assignment)
             equality = False
         table.append([*map(lambda b: FT[b], [*values, lhs_value, rhs_value])])
 
