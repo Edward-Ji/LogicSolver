@@ -1,3 +1,5 @@
+import readline
+
 import pyparsing
 from pyparsing import (
     Char, Keyword, Literal, OpAssoc,
