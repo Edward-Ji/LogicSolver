@@ -3,7 +3,7 @@ import readline
 import pyparsing
 from pyparsing import (
     Char, Keyword, Literal, OpAssoc,
-    alphas, infix_notation, one_of
+    alphas, delimited_list, infix_notation, one_of
 )
 
 
@@ -44,11 +44,18 @@ expr = infix_notation(
         (condi, 2, OpAssoc.RIGHT)
     ]
 )
+
 equiv = expr + one_of("≡ ==") + expr
+
+deduce = delimited_list(expr) + one_of("⊢ |-") + expr
 
 
 def parse_equiv(equiv_str):
     return equiv.parse_string(equiv_str, parse_all=True).as_list()
+
+
+def parse_deduce(deduce_str):
+    return deduce.parse_string(deduce_str, parse_all=True).as_list()
 
 
 def standardize(formula):
@@ -59,8 +66,10 @@ def standardize(formula):
             return (BOT,)
         elif var.matches(formula[0]):
             return (formula[0],)
-        else:
+        elif isinstance(formula, tuple):
             return standardize(formula[0])
+        else:
+            return formula[0]
     elif len(formula) == 2:
         return (LNOT, standardize(formula[1]))
     else:
