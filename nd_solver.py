@@ -73,6 +73,9 @@ def main():
 
 
     tex_str = proc.stdout.split("ghci> ")[2]
+    if not tex_str:
+        print("Failed to construct a proof")
+        return 3
     for var in vars:
         tex_str = tex_str.replace(f"A_{alphas.index(var)}", var)
 
