@@ -77,7 +77,11 @@ def main():
         print("Failed to construct a proof")
         return 3
     for var in vars:
-        tex_str = tex_str.replace(f"A_{alphas.index(var)}", var)
+        sub = str(alphas.index(var))
+        if len(sub) == 1:
+            tex_str = tex_str.replace(f"A_{sub}", var)
+        else:
+            tex_str = tex_str.replace(f"A_{{{sub}}}", var)
 
     with open("tmp.tex", "w") as tex:
         tex.write(
