@@ -66,10 +66,10 @@ def standardize(formula):
             return (BOT,)
         elif var.matches(formula[0]):
             return (formula[0],)
-        elif isinstance(formula, tuple):
+        elif isinstance(formula[0], list):
             return standardize(formula[0])
         else:
-            return formula[0]
+            return (formula[0],)
     elif len(formula) == 2:
         return (LNOT, standardize(formula[1]))
     else:
