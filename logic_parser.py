@@ -2,7 +2,7 @@ import readline
 
 import pyparsing
 from pyparsing import (
-    Char, Keyword, Literal, OpAssoc,
+    Char, Keyword, Literal, OpAssoc, Optional,
     alphas, delimited_list, infix_notation, one_of
 )
 
@@ -47,7 +47,7 @@ expr = infix_notation(
 
 equiv = expr + one_of("≡ ==") + expr
 
-deduce = delimited_list(expr) + one_of("⊢ |-") + expr
+deduce = Optional(delimited_list(expr)) + one_of("⊢ |-") + expr
 
 
 def parse_equiv(equiv_str):
