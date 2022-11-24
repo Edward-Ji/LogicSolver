@@ -13,9 +13,9 @@ from pyparsing.exceptions import ParseException
 from logic_parser import (
     TOP, BOT, LNOT, LAND, LOR, IMPLIES, LRARR,
     is_verum, is_falsem, is_neg, is_conj, is_disj, is_imply, is_lrarr,
-    parse_equiv, standardize, stringify, get_vars, evaluate
+    parse_equiv, standardize, stringify, latexify, get_vars, evaluate
 )
-from table_format import print_table
+from table_format import print_table, latex_table
 
 
 def idempotent_laws(formula):
@@ -250,13 +250,23 @@ def prove_equiv(lhs, rhs, nest_limit=0):
         count += 1
 
 
-def display_steps(steps):
+def display_steps(steps, latex=False):
     table = []
     for index, (formula, law) in enumerate(steps):
         index_str = str(index)
-        formula_str = stringify(formula)
+        if not latex:
+            formula_str = stringify(formula)
+        else:
+            formula_str = latexify(formula)
+        if latex:
+            law = rf"\text{{{law}}}"
         table.append((index_str, formula_str, law))
-    print_table(table, aligns=">^<", header=["Step", "Formula", "Law"])
+    if not latex:
+        print_table(table, aligns=">^<", header=["Step", "Formula", "Law"])
+    else:
+        latex_table(table,
+                    aligns=">^<",
+                    header=[r"\text{Step}", r"\text{Formula}", r"\text{Law}"])
 
 
 def verify_equiv(lhs, rhs, vars):
@@ -309,6 +319,7 @@ def main():
     if proof is not None:
         print("Proof:")
         display_steps(proof)
+        display_steps(proof, latex=True)
     else:
         print("Failed to construct a proof.")
         return 3

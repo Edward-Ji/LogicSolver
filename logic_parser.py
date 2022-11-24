@@ -169,3 +169,26 @@ def stringify(formula):
             return f"({left_str}{IMPLIES}{right_str})"
         elif is_lrarr(formula):
             return f"({left_str}{LRARR}{right_str})"
+
+
+def latexify(formula):
+    if is_verum(formula):
+        return r"\top "
+    elif is_falsem(formula):
+        return r"\bot "
+    elif is_var(formula):
+        return formula[0]
+    elif is_neg(formula):
+        right_str = latexify(formula[1])
+        return rf"\lnot {right_str}"
+    elif len(formula) == 3:
+        left_str = latexify(formula[0])
+        right_str = latexify(formula[2])
+        if is_conj(formula):
+            return rf"({left_str}\land {right_str})"
+        elif is_disj(formula):
+            return rf"({left_str}\lor {right_str})"
+        elif is_imply(formula):
+            return rf"({left_str}\to {right_str})"
+        elif is_lrarr(formula):
+            return rf"({left_str}\lrarr {right_str})"
