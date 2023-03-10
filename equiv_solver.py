@@ -305,7 +305,9 @@ def main():
     vars = sorted({*get_vars(lhs), *get_vars(rhs)})
 
     print("Left hand side:", stringify(lhs))
+    print("Left hand side (latex):", latexify(lhs))
     print("Right hand side:", stringify(rhs))
+    print("Right hand side (latex):", latexify(rhs))
     if vars:
         print("Variables:", ", ".join(vars))
     else:
