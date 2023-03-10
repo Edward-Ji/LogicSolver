@@ -13,24 +13,24 @@ from logic_parser import (
 
 def make_9y0(formula):
     if is_verum(formula):
-        return f"(Falsum --> Falsum)"
-    elif is_falsem(formula):
-        return FALSUM
-    elif is_var(formula):
+        return "(Falsum --> Falsum)"
+    if is_falsem(formula):
+        return "Falsum"
+    if is_var(formula):
         return f"Atom {alphas.index(formula[0])}"
-    elif is_neg(formula):
+    if is_neg(formula):
         right_str = make_9y0(formula[1])
         return f"({right_str} --> Falsum)"
-    elif len(formula) == 3:
+    if len(formula) == 3:
         left_str = make_9y0(formula[0])
         right_str = make_9y0(formula[2])
         if is_conj(formula):
             return fr"({left_str} /\ {right_str})"
-        elif is_disj(formula):
+        if is_disj(formula):
             return fr"({left_str} \/ {right_str})"
-        elif is_imply(formula):
+        if is_imply(formula):
             return f"({left_str} --> {right_str})"
-        elif is_lrarr(formula):
+        if is_lrarr(formula):
             return (fr"({left_str} --> {right_str}) /\ "
                     fr"({left_str} <-- {right_str})")
 
